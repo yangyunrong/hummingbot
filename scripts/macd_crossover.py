@@ -24,11 +24,11 @@ class MacdCrossoverConfig(BaseClientModel):
     exchange: str = Field("gate_io_perpetual", json_schema_extra={  
         "prompt": "Exchange name (e.g., gate_io_perpetual, binance_perpetual)",  
         "prompt_on_new": True})  
-    trading_pair: str = Field("BTC-USDT", json_schema_extra={  
-        "prompt": "Trading pair (e.g., BTC-USDT)",  
+    trading_pair: str = Field("XRP-USDT", json_schema_extra={  
+        "prompt": "Trading pair (e.g., XRP-USDT)",  
         "prompt_on_new": True})  
-    order_amount_usd: Decimal = Field(Decimal("100"), json_schema_extra={  
-        "prompt": "Order amount in USD",  
+    order_amount_xrp: Decimal = Field(Decimal("100"), json_schema_extra={  
+        "prompt": "Order amount in XRP",  
         "prompt_on_new": True})  
     leverage: int = Field(5, json_schema_extra={  
         "prompt": "Leverage to use",  
@@ -61,10 +61,11 @@ class MacdCrossoverConfig(BaseClientModel):
   
 class MacdCrossoverStrategy(ScriptStrategyBase):  
     """  
-    MACD Crossover Strategy  
+    MACD Crossover Strategy for XRP-USDT  
     - Opens long position when MACD crosses above Signal line (Golden Cross)  
     - Opens short position when MACD crosses below Signal line (Death Cross)  
     - Uses PositionExecutor for stop loss and take profit management  
+    - Orders are placed in XRP quantity  
     """  
   
     @classmethod  
@@ -150,12 +151,12 @@ class MacdCrossoverStrategy(ScriptStrategyBase):
     def create_position(self, signal: int):  
         """Create a new position based on signal"""  
         price = self.connectors[self.config.exchange].get_mid_price(self.config.trading_pair)  
-        amount = self.config.order_amount_usd / price  
+        amount = self.config.order_amount_xrp  # Direct XRP quantity  
           
         side = TradeType.BUY if signal > 0 else TradeType.SELL  
           
         self.logger().info(  
-            f"Creating {'LONG' if signal > 0 else 'SHORT'} position at {price:.2f}"  
+            f"Creating {'LONG' if signal > 0 else 'SHORT'} position at {price:.4f} with {amount} XRP"  
         )  
           
         executor = PositionExecutor(  
@@ -201,8 +202,9 @@ class MacdCrossoverStrategy(ScriptStrategyBase):
     def is_margin_enough(self) -> bool:  
         """Check if there's enough margin to open a position"""  
         connector = self.connectors[self.config.exchange]  
-        balance = connector.get_balance(self.config.trading_pair.split("-")[1])  
-        required_margin = self.config.order_amount_usd / self.config.leverage  
+        balance = connector.get_balance(self.config.trading_pair.split("-")[1])  # USDT balance  
+        price = connector.get_mid_price(self.config.trading_pair)  
+        required_margin = (self.config.order_amount_xrp * price) / self.config.leverage  
         return balance >= required_margin  
   
     async def on_stop(self):  
@@ -222,6 +224,7 @@ class MacdCrossoverStrategy(ScriptStrategyBase):
             f"{'='*50}",  
             f"Exchange: {self.config.exchange}",  
             f"Trading Pair: {self.config.trading_pair}",  
+            f"Order Amount: {self.config.order_amount_xrp} XRP",  
             f"Leverage: {self.config.leverage}x",  
             f"Active Positions: {len(self.get_active_executors())}",  
             f"Candles Ready: {self.candles.ready}",  
