@@ -1,0 +1,39 @@
+name: Publish DKIVN V4.2 Static Preview
+
+on:
+  push:
+    branches:
+      - dkivn-v42-site
+    paths:
+      - .github/workflows/dkivn-v42-publish.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dkivn-v42-site
+      - name: Fetch dashboard HTML
+        run: |
+          mkdir -p dkivn
+          curl --fail --location --retry 3 --silent --show-error \
+            'https://txutcpmarsvsdcvgyhtu.supabase.co/functions/v1/dkivn-v42-public' \
+            -o dkivn/index.html
+          test -s dkivn/index.html
+          grep -q 'DKIVN BTC Trading Terminal V4.2' dkivn/index.html
+      - name: Commit static site
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dkivn/index.html
+          if git diff --cached --quiet; then
+            echo 'No changes to publish'
+          else
+            git commit -m 'chore: refresh DKIVN V4.2 static site'
+            git push origin HEAD:dkivn-v42-site
+          fi
