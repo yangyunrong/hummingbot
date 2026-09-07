@@ -11,16 +11,20 @@ TOKEN="$(sed -n 's/^DKIVN_GATEWAY_TOKEN=//p' "$ENV_FILE" | tail -1)"
 LIVE="$(sed -n 's/^GATEWAY_LIVE_ENABLED=//p' "$ENV_FILE" | tail -1)"
 [[ -n "$BRIDGE_URL" && -n "$TOKEN" ]] || { echo 'BRIDGE_ENV_MISSING' >&2; exit 1; }
 [[ "$LIVE" == "false" ]] || { echo 'LIVE_NOT_DISABLED' >&2; exit 1; }
+STATE_URL="${BRIDGE_URL%/dkivn-v47-gateway-telemetry}/dkivn-v48-state-read"
 
-call(){
+call_bridge(){
   curl -fsS --max-time 8 -H "Authorization: Bearer $TOKEN" -H 'Accept: application/json' "$BRIDGE_URL$1"
 }
+call_state(){
+  curl -fsS --max-time 8 -H "Authorization: Bearer $TOKEN" -H 'Accept: application/json' "$STATE_URL$1"
+}
 
-HEALTH="$(call /health)"
-ACCOUNT="$(call /account-snapshot)"
-ORDERS="$(call /maker/open-orders)"
-RUNTIME="$(call /runtime-state)"
-TELEMETRY="$(call /telemetry-state)"
+HEALTH="$(call_bridge /health)"
+ACCOUNT="$(call_bridge /account-snapshot)"
+ORDERS="$(call_bridge /maker/open-orders)"
+RUNTIME="$(call_state /runtime)"
+TELEMETRY="$(call_state /telemetry)"
 
 python3 - "$HEALTH" "$ACCOUNT" "$ORDERS" "$RUNTIME" "$TELEMETRY" <<'PY'
 import json,sys,time,datetime
