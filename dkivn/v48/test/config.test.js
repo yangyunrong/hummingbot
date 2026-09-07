@@ -11,6 +11,7 @@ test('loads safe V4.8 defaults', () => {
   assert.equal(c.hardInventoryUsdt, 20);
   assert.equal(c.minQuoteLifeMs, 2500);
   assert.equal(c.marketStaleMs, 2000);
+  assert.equal(c.clockSkewHardMs, 1500);
   assert.equal(c.apiErrorHardLimit, 3);
   assert.equal(c.liveEnabled, false);
   assert.ok(Object.isFrozen(c));
