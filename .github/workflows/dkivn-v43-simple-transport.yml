@@ -1,0 +1,38 @@
+name: Build DKIVN V4.3 Simple Transport
+on:
+  push:
+    branches: [dkivn-v43-pages]
+    paths: [.github/workflows/dkivn-v43-simple-transport.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dkivn-v43-pages
+      - name: Build no-preflight control page
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          src=Path('site/v43-control.html')
+          s=src.read_text()
+          replacement=r'''async function call(p,o={}){const method=String(o.method||'GET').toUpperCase();const u=new URL(API+p);const opt={cache:'no-store'};if(method==='GET'||method==='HEAD'){if(token)u.searchParams.set('_token',token);opt.method=method}else{const f=new URLSearchParams();if(token)f.set('_token',token);f.set('_method',method);if(o.body!==undefined)f.set('_json',JSON.stringify(o.body));opt.method='POST';opt.headers={'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'};opt.body=f.toString()}const r=await fetch(u.toString(),opt);let d={};try{d=await r.json()}catch{}if(!r.ok){const e=new Error(d.message||d.error||'HTTP '+r.status);e.status=r.status;e.data=d;throw e}return d}
+async function system('''
+          pattern=r"async function call\(p,o=\{\}\)\{.*?\}\nasync function system\("
+          out,n=re.subn(pattern,replacement,s,count=1,flags=re.S)
+          if n!=1:
+              raise SystemExit(f'call transport replacement count={n}')
+          out=out.replace("const MAIN='https://rawcdn.githack.com/yangyunrong/hummingbot/3467f77249e3692873376f6b5f85b52fdfb02749/site/v43-control.html'","const MAIN='https://rawcdn.githack.com/yangyunrong/hummingbot/PLACEHOLDER/site/v43-control-simple.html'")
+          Path('site/v43-control-simple.html').write_text(out)
+          PY
+      - name: Commit generated page
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/v43-control-simple.html
+          git commit -m 'fix: use simple transport for V4.3 control' || exit 0
+          git push origin HEAD:dkivn-v43-pages
