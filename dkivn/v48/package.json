@@ -1,0 +1,9 @@
+{
+  "name": "dkivn-v48-adaptive-maker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node --check src/gateway.js"
+  }
+}
