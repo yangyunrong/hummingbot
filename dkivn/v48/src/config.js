@@ -9,6 +9,7 @@ export function loadConfig(env = process.env) {
     minQuoteLifeMs: n('V48_MIN_QUOTE_LIFE_MS', 2500),
     requoteBps: n('V48_REQUOTE_BPS', 2),
     marketStaleMs: n('V48_MARKET_STALE_MS', 2000),
+    clockSkewHardMs: n('V48_CLOCK_SKEW_HARD_MS', 1500),
     apiErrorHardLimit: n('V48_API_ERROR_HARD_LIMIT', 3),
     dailyLossLimitUsdt: n('V48_DAILY_LOSS_LIMIT_USDT', 2),
     riskSoft: n('V48_RISK_SOFT', 75),
