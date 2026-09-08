@@ -8,6 +8,7 @@ export class ToobitDirectClient {
   #f(path,params,{method='POST'}={}){return buildSignedFormRequest({path,method,params,apiKey:this.apiKey,secret:this.secret,baseUrl:this.baseUrl});}
   balance(){return this.#send(this.#q('/api/v1/futures/balance'));}
   positions(symbol='BTC-SWAP-USDT'){return this.#send(this.#q('/api/v1/futures/positions',{params:{symbol}}));}
+  accountLeverage(symbol='BTC-SWAP-USDT'){return this.#send(this.#q('/api/v1/futures/accountLeverage',{params:{symbol}}));}
   commission(symbol='BTC-SWAP-USDT'){return this.#send(this.#q('/api/v1/futures/commissionRate',{params:{symbol}}));}
   todayPnl(){return this.#send(this.#q('/api/v1/futures/todayPnl',{params:{category:'USDT'}}));}
   openOrders(symbol='BTC-SWAP-USDT'){return this.#send(this.#q('/api/v2/futures/open-orders',{params:{symbol,limit:1000,category:'USDT'}}));}
@@ -16,7 +17,8 @@ export class ToobitDirectClient {
   keepaliveListenKey(listenKey){return this.#send(this.#q('/api/v1/listenKey',{method:'PUT',params:{listenKey,category:'USDT'}}));}
   closeListenKey(listenKey){return this.#send(this.#q('/api/v1/listenKey',{method:'DELETE',params:{listenKey,category:'USDT'}}));}
   async place(order){
-    const params={symbol:order.symbol,side:order.side,positionSide:order.positionSide,type:'LIMIT',newClientOrderId:order.clientOrderId,valueQuantity:String(order.valueQuantity),price:String(order.price),timeInForce:'POST_ONLY',category:'USDT'};
+    const params={symbol:order.symbol,side:order.side,positionSide:order.positionSide,type:'LIMIT',newClientOrderId:order.clientOrderId,price:String(order.price),timeInForce:'POST_ONLY',category:'USDT'};
+    if(Number(order.quantity)>0)params.quantity=String(order.quantity);else params.valueQuantity=String(order.valueQuantity);
     try{return await this.#send(this.#f('/api/v2/futures/order',params));}
     catch(e){
       if(![-1004,-1102].includes(Number(e?.code)))throw e;
@@ -24,7 +26,7 @@ export class ToobitDirectClient {
       return this.#send(this.#j('/api/v2/futures/order',body,{category}));
     }
   }
-  update(order){return this.#send(this.#f('/api/v2/futures/order/update',{origClientOrderId:order.origClientOrderId||order.clientOrderId,newClientOrderId:order.clientOrderId,valueQuantity:String(order.valueQuantity),price:String(order.price),category:'USDT'}));}
+  update(order){const params={origClientOrderId:order.origClientOrderId||order.clientOrderId,newClientOrderId:order.clientOrderId,price:String(order.price),category:'USDT'};if(Number(order.quantity)>0)params.quantity=String(order.quantity);else params.valueQuantity=String(order.valueQuantity);return this.#send(this.#f('/api/v2/futures/order/update',params));}
   cancel(clientOrderId){return this.#send(this.#q('/api/v2/futures/order',{method:'DELETE',params:{origClientOrderId:clientOrderId,category:'USDT'}}));}
   flashClose(symbol='BTC-SWAP-USDT',side='LONG',clientOrderId){return this.#send(this.#q('/api/v1/futures/flashClose',{method:'POST',params:{symbol,side,clientOrderId:clientOrderId||`DKV49C_${Date.now()}`,category:'USDT'}}));}
 }
