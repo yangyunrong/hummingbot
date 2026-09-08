@@ -18,7 +18,7 @@ export class AutoRunSupervisor{
   close(){if(this.timer){clearInterval(this.timer);this.timer=null;}}
   status(){const persisted=this.store.load();return{...this.runtime.status(),desiredState:persisted.desiredState,autoRunEnabled:persisted.desiredState==='RUNNING',autoRetryAt:this.nextRetryAt||null};}
   saveSettings(settings={}){const applied=this.runtime.setSettings(settings);this.store.setSettings(applied);return applied;}
-  async start(settings={}){const applied=this.saveSettings(settings);this.store.setDesiredState('RUNNING');this.retryCount=0;this.nextRetryAt=0;return this.#attempt(applied);}
+  async start(settings={}){const applied=this.saveSettings(settings);this.store.setDesiredState('RUNNING');this.retryCount=0;this.nextRetryAt=0;return this.#attempt('start',applied);}
   async resume(settings={}){return this.start(settings);}
   async pause(){this.store.setDesiredState('PAUSED');this.retryCount=0;this.nextRetryAt=0;return this.runtime.pause();}
   async disarm(reason='MANUAL_DISARM'){this.store.setDesiredState('DISARMED');this.retryCount=0;this.nextRetryAt=0;return this.runtime.stop(reason);}
@@ -37,13 +37,13 @@ export class AutoRunSupervisor{
       this.store.setDesiredState('DISARMED');return this.status();
     }
     if(this.now()<this.nextRetryAt)return this.status();
-    return this.#attempt(desired.settings||{});
+    return this.#attempt('recover',desired.settings||{});
   }
-  async #attempt(settings){
+  async #attempt(method,settings){
     if(this.inFlight)return this.status();
     this.inFlight=true;
     try{
-      const result=await this.runtime.start(settings);
+      const fn=method==='recover'?this.runtime.recover:this.runtime.start;if(typeof fn!=='function')throw new Error(`RUNTIME_${method.toUpperCase()}_UNAVAILABLE`);const result=await fn.call(this.runtime,settings);
       const state=String(result?.state||'').toUpperCase(),reason=String(result?.reason||'').toUpperCase();
       if(ACTIVE.has(state)){this.retryCount=0;this.nextRetryAt=0;return this.status();}
       if(reason&&classifyRunStopReason(reason)==='HARD'){
