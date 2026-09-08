@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const VALID=new Set(['RUNNING','PAUSED','DISARMED']);
-const HARD=new Set(['MANUAL_DISARM','MANUAL_PAUSE','DAILY_LOSS_LIMIT','RISK_RATE_HARD_LIMIT','CREDENTIAL_REMOVED','LIVE_DISABLED','TRADE_NOT_DECLARED']);
+const HARD=new Set(['MANUAL_DISARM','MANUAL_PAUSE','DAILY_LOSS_LIMIT','RISK_RATE_HARD_LIMIT','CREDENTIAL_REMOVED','LIVE_DISABLED','TRADE_NOT_DECLARED','API_ERROR_STREAK','RECOVERY_SYNC_FAILED','MANUAL_REARM_REQUIRED']);
 
 export function classifyRunStopReason(reason=''){
   return HARD.has(String(reason).toUpperCase())?'HARD':'TRANSIENT';
