@@ -13,6 +13,17 @@ async function parseBody(req){let raw='';for await(const c of req){raw+=c;if(raw
 async function controlCall(path,token){const r=await fetch(CONTROL_BASE+path,{headers:{Accept:'application/json',Authorization:`Bearer ${token}`},cache:'no-store'});const d=await r.json().catch(()=>({}));return{ok:r.ok,data:d};}
 async function requireAdmin(req){const token=tokenOf(req);if(!token)return null;const r=await controlCall('/session',token);return r.ok&&r.data?.authenticated===true?token:null;}
 async function inheritedTradeStatus(token,apiKey){try{const r=await controlCall('/credential-status',token),last4=String(apiKey).slice(-4),masked=String(r.data?.maskedKey||'');return masked.endsWith(last4)&&String(r.data?.tradePermissionStatus||'').toUpperCase()==='VERIFIED'?'VERIFIED':'DECLARED_UNVERIFIED';}catch{return'DECLARED_UNVERIFIED';}}
+async function flashCloseAll(){
+ if(!runtime.client)throw Object.assign(new Error('Tokyo Trading API 尚未綁定'),{code:'CREDENTIAL_NOT_PROVISIONED'});
+ await runtime.stop('MANUAL_FLAT');
+ const positions=runtime.status().account?.positions||[];
+ const active=positions.filter(p=>Math.abs(Number(p?.positionValue||0))>0.0001||Math.abs(Number(p?.position||0))>0.00000001);
+ if(!active.length){runtime.state='DISARMED';runtime.reason='ALREADY_FLAT';return{closed:0,runtime:runtime.status()};}
+ const results=[];
+ for(const p of active){const side=String(p?.side||p?.positionSide||'').toUpperCase();if(!['LONG','SHORT'].includes(side))continue;const clientOrderId=`DKV49C_${Date.now()}_${side}`;const result=await runtime.client.flashClose(runtime.symbol,side,clientOrderId);results.push({side,orderId:String(result?.orderId??result?.data?.orderId??'')});}
+ runtime.state='DISARMED';runtime.reason=results.length?'FLASH_CLOSE_SUBMITTED':'NO_CLOSEABLE_POSITION';
+ return{closed:results.length,results,runtime:runtime.status()};
+}
 
 async function handler(req,res){const url=new URL(req.url,'http://local'),p=url.pathname;if(req.method==='OPTIONS')return json(res,204,{});if(p==='/health')return json(res,200,{ok:true,version:'4.9-local',executorMode:'V49_LIVE',liveEnabled:runtime.liveEnabled});const token=await requireAdmin(req);if(!token)return json(res,401,{ok:false,error:'AUTH_REQUIRED'});
  try{
@@ -27,6 +38,7 @@ async function handler(req,res){const url=new URL(req.url,'http://local'),p=url.
   if(p==='/strategy/pause'&&req.method==='POST')return json(res,200,{ok:true,runtime:await runtime.pause()});
   if(p==='/strategy/resume'&&req.method==='POST'){const b=await parseBody(req);const s=await runtime.resume(b.settings||b);return json(res,s.state==='DISARMED'?409:200,{ok:s.state!=='DISARMED',runtime:s});}
   if(p==='/strategy/disarm'&&req.method==='POST')return json(res,200,{ok:true,runtime:await runtime.stop('MANUAL_DISARM')});
+  if(p==='/position/flash-close'&&req.method==='POST'){const b=await parseBody(req);if(String(b.confirm||'')!=='CLOSE_ALL_BTC')return json(res,400,{ok:false,error:'CONFIRMATION_REQUIRED'});const out=await flashCloseAll();return json(res,200,{ok:true,...out});}
   return json(res,404,{ok:false,error:'NOT_FOUND'});
  }catch(e){return json(res,500,{ok:false,error:String(e?.code||'LOCAL_CONTROL_ERROR'),message:String(e?.message||e).slice(0,240)});}
 }
