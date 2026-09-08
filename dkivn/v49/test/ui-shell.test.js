@@ -25,8 +25,10 @@ test('overview prioritizes equity, strategy state and one primary action',()=>{
   assert.equal((s.match(/id="primaryAction"/g)||[]).length,1);
 });
 
-test('START gating exposes explicit blocker reason instead of fake activation',()=>{
+test('START gating exposes Tokyo executor blockers instead of fake activation',()=>{
   const s=js();
-  for(const reason of ['EXECUTOR_OFFLINE','LIVE_DISABLED','TRADE_NOT_VERIFIED','PUBLIC_WS_OFFLINE','PRIVATE_WS_OFFLINE']) assert.ok(s.includes(reason),reason);
-  assert.ok(s.includes('btn.disabled=!lastCapability.ok'));
+  for(const reason of ['EXECUTOR_STATUS_UNAVAILABLE','CREDENTIAL_NOT_PROVISIONED','LIVE_DISABLED','PUBLIC_WS_OFFLINE','PRIVATE_WS_OFFLINE','MARKET_STALE']) assert.ok(s.includes(reason),reason);
+  assert.ok(s.includes("['RUNNING','RISK_REDUCE']"));
+  assert.ok(s.includes("btn.disabled=!active&&!paused&&!lastCapability.ok"));
+  assert.ok(s.includes("/strategy/start"));
 });
