@@ -53,7 +53,7 @@ Use a compact left sidebar. The sidebar should be narrow and calm, with icon + l
    - Available, Position, Leverage, Risk as four compact metrics
 
 3. Primary market chart
-   - BTCUSDT price / candle chart
+   - BTCUSDT candle / price chart from Toobit real market data
    - selectable timeframe: 1m / 5m / 15m / 1h
    - overlays: Fair Price, Microprice, Bot Bid, Bot Ask
    - fill markers when data is available
@@ -88,8 +88,13 @@ Charts are not optional and must be treated as first-class content.
 
 ### 5.1 Main Market Chart
 
+Data source:
+- Initial history: Toobit Futures `GET /quote/v1/klines`
+- Live candle updates: Toobit Futures WebSocket `kline_<interval>` stream
+- Supported UI timeframes in first release: 1m / 5m / 15m / 1h
+
 Display:
-- Price / candle series
+- OHLC candle / price series
 - Best Bid / Ask context
 - Fair Price
 - Microprice
@@ -100,6 +105,8 @@ Interaction:
 - timeframe selector
 - hover / touch crosshair when technically feasible
 - compact tooltip
+
+The main market chart must use real Toobit data and must never fall back to fabricated sample market data.
 
 ### 5.2 PnL Chart
 
@@ -314,13 +321,21 @@ Must preserve:
 
 ## 14. Data Additions Needed for Charts
 
-Where current APIs do not provide chart history, add read-only local history buffers / lightweight time-series endpoints for:
-- market price / fair / micro / bot quote snapshots
+### Market candles
+
+No local synthetic candle builder is required for the main chart. Use Toobit public market-data APIs directly through the existing server/proxy boundary:
+- historical Klines from `/quote/v1/klines`
+- live Kline updates from the public WebSocket stream
+
+### Local historical observation buffers
+
+Where current APIs do not provide app-specific chart history, add read-only local history buffers / lightweight time-series endpoints for:
+- Fair / Micro / Bot Bid / Bot Ask snapshots
 - PnL timeline
 - inventory timeline
 - execution quality metrics
 
-These additions must not sit in the trading hot path and must not block or delay order execution.
+These additions must not sit in the trading hot path and must not block or delay order execution. Observation writes must be best-effort and droppable under load.
 
 ## 15. Error and Empty States
 
@@ -359,6 +374,7 @@ Likely new UI/chart modules:
 
 Possible read-only backend additions:
 - historical telemetry / chart-series endpoint(s)
+- public Kline proxy if direct browser access is undesirable or blocked by CORS
 
 Trading execution core (`maker-core`, `live-runtime`, order transport) must not be changed unless a chart data requirement strictly needs a non-blocking observation hook.
 
@@ -374,6 +390,7 @@ Add / update tests for:
 - lifecycle controls remain wired to Tokyo local executor
 - plain-language runtime status mapping
 - chart empty states
+- Kline history uses real Toobit market data
 - no browser storage of API secrets
 
 Visual manual verification:
@@ -389,13 +406,14 @@ The redesign is complete only when:
 1. Mobile and desktop both look intentional and polished.
 2. The first viewport clearly communicates equity, market state, strategy state, and one primary action.
 3. Charts are present, readable, and visually dominant where appropriate.
-4. Strategy parameters remain fully editable and persistent.
-5. Orders and risk data remain fully accessible.
-6. No regression in V4.9 lifecycle controls or executor wiring.
-7. No horizontal overflow on supported mobile widths.
-8. All automated UI/runtime contract tests pass.
-9. Production deployment is versioned and rollback-safe.
-10. Existing `/v49/` behavior remains available for rollback until the redesigned build is verified.
+4. Main market chart is backed by real Toobit Kline data.
+5. Strategy parameters remain fully editable and persistent.
+6. Orders and risk data remain fully accessible.
+7. No regression in V4.9 lifecycle controls or executor wiring.
+8. No horizontal overflow on supported mobile widths.
+9. All automated UI/runtime contract tests pass.
+10. Production deployment is versioned and rollback-safe.
+11. Existing `/v49/` behavior remains available for rollback until the redesigned build is verified.
 
 ## 20. Rollout
 
