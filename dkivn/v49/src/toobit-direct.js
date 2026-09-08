@@ -15,7 +15,15 @@ export class ToobitDirectClient {
   createListenKey(){return this.#send(this.#q('/api/v1/listenKey',{method:'POST',params:{category:'USDT'}}));}
   keepaliveListenKey(listenKey){return this.#send(this.#q('/api/v1/listenKey',{method:'PUT',params:{listenKey,category:'USDT'}}));}
   closeListenKey(listenKey){return this.#send(this.#q('/api/v1/listenKey',{method:'DELETE',params:{listenKey,category:'USDT'}}));}
-  place(order){return this.#send(this.#f('/api/v2/futures/order',{symbol:order.symbol,side:order.side,positionSide:order.positionSide,type:'LIMIT',newClientOrderId:order.clientOrderId,valueQuantity:String(order.valueQuantity),price:String(order.price),timeInForce:'POST_ONLY',category:'USDT'}));}
+  async place(order){
+    const params={symbol:order.symbol,side:order.side,positionSide:order.positionSide,type:'LIMIT',newClientOrderId:order.clientOrderId,valueQuantity:String(order.valueQuantity),price:String(order.price),timeInForce:'POST_ONLY',category:'USDT'};
+    try{return await this.#send(this.#f('/api/v2/futures/order',params));}
+    catch(e){
+      if(![-1004,-1102].includes(Number(e?.code)))throw e;
+      const {category,...body}=params;
+      return this.#send(this.#j('/api/v2/futures/order',body,{category}));
+    }
+  }
   update(order){return this.#send(this.#f('/api/v2/futures/order/update',{origClientOrderId:order.origClientOrderId||order.clientOrderId,newClientOrderId:order.clientOrderId,valueQuantity:String(order.valueQuantity),price:String(order.price),category:'USDT'}));}
   cancel(clientOrderId){return this.#send(this.#q('/api/v2/futures/order',{method:'DELETE',params:{origClientOrderId:clientOrderId,category:'USDT'}}));}
   flashClose(symbol='BTC-SWAP-USDT',side='LONG',clientOrderId){return this.#send(this.#q('/api/v1/futures/flashClose',{method:'POST',params:{symbol,side,clientOrderId:clientOrderId||`DKV49C_${Date.now()}`,category:'USDT'}}));}
