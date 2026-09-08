@@ -22,15 +22,17 @@
   function updateStrategyControls(){
     injectStrategyControls();
     const d=localSnapshot();
-    const pause=document.querySelector('#pauseAction'),resume=document.querySelector('#resumeAction'),disarm=document.querySelector('#disarmAction'),flat=document.querySelector('#flatAction');
+    const primary=document.querySelector('#primaryAction'),pause=document.querySelector('#pauseAction'),resume=document.querySelector('#resumeAction'),disarm=document.querySelector('#disarmAction'),flat=document.querySelector('#flatAction');
     if(!pause||!resume||!disarm||!flat)return;
     if(!d){pause.disabled=resume.disabled=disarm.disabled=flat.disabled=true;return;}
     const state=String(d.state||'DISARMED').toUpperCase();
-    const active=['RUNNING','RISK_REDUCE'].includes(state),paused=state==='PAUSED';
+    const desired=String(d.desiredState||'DISARMED').toUpperCase();
+    const active=['RUNNING','RISK_REDUCE'].includes(state),paused=state==='PAUSED',autoRecover=desired==='RUNNING'&&!active&&!paused;
     const gross=Number(d.inventory?.grossInventoryNotional||0);
+    if(primary&&autoRecover){primary.disabled=true;primary.textContent='AUTO RUN · 自動恢復中';}
     pause.disabled=!active;
     resume.disabled=!paused;
-    disarm.disabled=state==='DISARMED'&&Number(d.openBotOrders||0)===0;
+    disarm.disabled=desired!=='RUNNING'&&state==='DISARMED'&&Number(d.openBotOrders||0)===0;
     flat.disabled=!d.credentialBound||!(gross>0.0001);
     flat.textContent=gross>0.0001?`全部平倉 ${gross.toFixed(2)} U`:'全部平倉';
   }
@@ -45,13 +47,13 @@
   }
   async function disarmMaker(){
     if(!confirm('DISARM 會停止策略並撤銷所有 DKV49M_ Bot 掛單，但不會平倉。確定繼續？'))return;
-    try{const d=await localCall('/strategy/disarm',{method:'POST',body:{}});toast('已 DISARM，Bot 掛單已撤銷');if(d.runtime)renderLocalStatus(d.runtime);await refreshOrders();}
+    try{const d=await localCall('/strategy/disarm',{method:'POST',body:{}});toast('已 DISARM，Auto Run 已關閉，Bot 掛單已撤銷');if(d.runtime)renderLocalStatus(d.runtime);await refreshOrders();}
     catch(e){toast('DISARM 失敗：'+e.message)}finally{updateStrategyControls()}
   }
   async function flatPosition(){
     const d=localSnapshot(),gross=Number(d?.inventory?.grossInventoryNotional||0);
     if(!(gross>0))return toast('目前沒有可平倉的 BTC 倉位');
-    if(!confirm(`這會先停止 Maker，再用 Toobit 市價平掉目前約 ${gross.toFixed(2)} U 的 BTC 倉位。此操作會立即影響實盤資產。確定全部平倉？`))return;
+    if(!confirm(`這會先停止 Maker 並關閉 Auto Run，再用 Toobit 市價平掉目前約 ${gross.toFixed(2)} U 的 BTC 倉位。此操作會立即影響實盤資產。確定全部平倉？`))return;
     try{const r=await localCall('/position/flash-close',{method:'POST',body:{confirm:'CLOSE_ALL_BTC'}});toast(`平倉指令已送出 · ${Number(r.closed||0)} 個倉位`);await new Promise(x=>setTimeout(x,900));await refreshLocalStatus();await refreshOrders();}
     catch(e){toast('平倉失敗：'+e.message)}finally{updateStrategyControls()}
   }
