@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.js",
-    "check": "node --check console/app.js && node --check src/execution-capability.js"
+    "check": "node --check console/app.js && node --check src/execution-capability.js && node --check src/v2-transport.js && node --check src/vault.js && node --check src/credential-store.js && node --check src/toobit-direct.js && node --check src/maker-core.js && node --check src/live-runtime.js && node --check src/control-server.js"
   }
 }
