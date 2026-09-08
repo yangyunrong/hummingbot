@@ -7,8 +7,10 @@ test('loads safe V4.8 defaults', () => {
   assert.equal(c.symbol, 'BTC-SWAP-USDT');
   assert.equal(c.botPrefix, 'DKV48M_');
   assert.equal(c.quoteNotional, 10);
+  assert.equal(c.minQuoteNotional, 5);
   assert.equal(c.softInventoryUsdt, 10);
   assert.equal(c.hardInventoryUsdt, 20);
+  assert.equal(c.maxLeverageForDualSide, 20);
   assert.equal(c.minQuoteLifeMs, 2500);
   assert.equal(c.marketStaleMs, 2000);
   assert.equal(c.clockSkewHardMs, 1500);
