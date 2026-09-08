@@ -23,8 +23,8 @@ test('RUNNING intent and last strategy settings survive process restart',()=>{
 });
 
 test('manual pause/disarm and hard risk never auto resume, transient transport faults may recover',()=>{
-  for(const reason of ['MANUAL_DISARM','MANUAL_PAUSE','DAILY_LOSS_LIMIT','RISK_RATE_HARD_LIMIT','CREDENTIAL_REMOVED'])assert.equal(classifyRunStopReason(reason),'HARD',reason);
-  for(const reason of ['PUBLIC_WS_OFFLINE','PRIVATE_WS_OFFLINE','MARKET_STALE','API_ERROR_STREAK','SERVICE_SHUTDOWN'])assert.equal(classifyRunStopReason(reason),'TRANSIENT',reason);
+  for(const reason of ['MANUAL_DISARM','MANUAL_PAUSE','DAILY_LOSS_LIMIT','RISK_RATE_HARD_LIMIT','CREDENTIAL_REMOVED','API_ERROR_STREAK','RECOVERY_SYNC_FAILED','MANUAL_REARM_REQUIRED'])assert.equal(classifyRunStopReason(reason),'HARD',reason);
+  for(const reason of ['PUBLIC_WS_OFFLINE','PRIVATE_WS_OFFLINE','MARKET_STALE','SERVICE_SHUTDOWN'])assert.equal(classifyRunStopReason(reason),'TRANSIENT',reason);
 });
 
 test('AUTO RUN calls START once, then only recover() after transient stalls',async()=>{
@@ -37,19 +37,19 @@ test('AUTO RUN calls START once, then only recover() after transient stalls',asy
     setSettings(s){this.settings={...this.settings,...s};return this.settings;},
     status(){return current;},
     async start(){startCalls++;current={state:'RUNNING',reason:'MAKER_ACTIVE',capability:{ok:true,reason:'READY'}};return current;},
-    async recover(){recoverCalls++;current=recoverCalls<2?{state:'DISARMED',reason:'MARKET_STALE',capability:{ok:true,reason:'READY'}}:{state:'RUNNING',reason:'MAKER_ACTIVE',capability:{ok:true,reason:'READY'}};return current;},
+    async recover(){recoverCalls++;current={state:'DISARMED',reason:'MARKET_STALE',capability:{ok:true,reason:'READY'}};return current;},
     async pause(){current={state:'PAUSED',reason:'MANUAL_PAUSE',capability:{ok:true,reason:'READY'}};return current;},
     async stop(reason){current={state:'DISARMED',reason,capability:{ok:true,reason:'READY'}};return current;}
   };
-  const sup=new AutoRunSupervisor({runtime,store,retryBaseMs:0,retryMaxMs:0});
+  const sup=new AutoRunSupervisor({runtime,store,intervalMs:1000});
   await sup.start({quoteNotional:10});
   assert.equal(startCalls,1);
   current={state:'DISARMED',reason:'MARKET_STALE',capability:{ok:true,reason:'READY'}};
   await sup.tick();
   await sup.tick();
   assert.equal(startCalls,1,'auto recovery must never re-enter runtime.start()');
-  assert.equal(recoverCalls,2);
-  assert.equal(store.load().desiredState,'RUNNING');
+  assert.equal(recoverCalls,1);
+  assert.equal(store.load().desiredState,'DISARMED');
   fs.rmSync(dir,{recursive:true,force:true});
 });
 
@@ -59,7 +59,7 @@ test('hard runtime stop clears RUNNING intent instead of auto restarting',async(
   store.setDesiredState('RUNNING');
   let startCalls=0,recoverCalls=0;
   const runtime={settings:{},setSettings(){return{};},status(){return{state:'DISARMED',reason:'DAILY_LOSS_LIMIT',capability:{ok:true,reason:'READY'}};},async start(){startCalls++;return this.status();},async recover(){recoverCalls++;return this.status();},async pause(){},async stop(){}};
-  const sup=new AutoRunSupervisor({runtime,store,retryBaseMs:0,retryMaxMs:0});
+  const sup=new AutoRunSupervisor({runtime,store,intervalMs:1000});
   await sup.tick();
   assert.equal(startCalls,0);
   assert.equal(recoverCalls,0);
