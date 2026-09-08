@@ -25,3 +25,11 @@ test('flash close is explicit signed POST with symbol and position side',async()
   assert.match(seen.url,/symbol=BTC-SWAP-USDT/);
   assert.match(seen.url,/side=LONG/);
 });
+
+test('reduce-only exact contract quantity omits valueQuantity',async()=>{
+  let seen=null;
+  const client=new ToobitDirectClient({apiKey:'key12345',secret:'secret123',fetchImpl:async(url,opts)=>{seen={url,opts};return okResponse({code:200,msg:'success',data:{clientOrderId:'x'}})}});
+  await client.place({symbol:'BTC-SWAP-USDT',side:'BUY',positionSide:'SHORT',clientOrderId:'DKV49M_tail',quantity:'0.1',price:'78300.0'});
+  assert.match(seen.opts.body,/quantity=0.1/);
+  assert.doesNotMatch(seen.opts.body,/valueQuantity=/);
+});
