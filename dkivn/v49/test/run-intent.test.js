@@ -30,12 +30,12 @@ test('manual pause/disarm and hard risk never auto resume, transient transport f
 test('supervisor retries transient DISARMED runtime while desired state remains RUNNING',async()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dkivn-v49-supervisor-'));
   const store=new RunIntentStore({file:path.join(dir,'run-state.json')});
-  let attempts=0;
+  let attempts=0,current={state:'DISARMED',reason:'MARKET_STALE',capability:{ok:true,reason:'READY'}};
   const runtime={
     settings:{quoteNotional:10},
     setSettings(s){this.settings={...this.settings,...s};return this.settings;},
-    status(){return attempts<2?{state:'DISARMED',reason:'MARKET_STALE',capability:{ok:attempts>0,reason:attempts>0?'READY':'MARKET_STALE'}}:{state:'RUNNING',reason:'MAKER_ACTIVE',capability:{ok:true,reason:'READY'}};},
-    async start(){attempts++;return this.status();},
+    status(){return current;},
+    async start(){attempts++;current=attempts===1?{state:'DISARMED',reason:'MARKET_STALE',capability:{ok:true,reason:'READY'}}:{state:'RUNNING',reason:'MAKER_ACTIVE',capability:{ok:true,reason:'READY'}};return current;},
     async pause(){return{state:'PAUSED',reason:'MANUAL_PAUSE'};},
     async stop(reason){return{state:'DISARMED',reason};}
   };
