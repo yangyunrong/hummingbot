@@ -46,14 +46,52 @@
       </section>
 
       <section class="page" data-page="strategy">
-        <div class="section-head"><span class="eyebrow">EXECUTION</span><h2>策略</h2></div>
-        <article class="detail-card">
-          <div class="detail-row"><span>Fair Price</span><b id="fairValue">—</b></div>
-          <div class="detail-row"><span>Microprice</span><b id="microValue">—</b></div>
-          <div class="detail-row"><span>Depth Imbalance</span><b id="imbalanceValue">—</b></div>
-          <div class="detail-row"><span>Inventory</span><b id="inventoryValue">—</b></div>
-          <div class="detail-row"><span>Leverage</span><b id="leverageValue">—</b></div>
-        </article>
+        <div class="section-head"><span class="eyebrow">EXECUTION</span><h2>策略</h2><p>策略數字可直接修改；儲存只更新設定，不會自動送單。</p></div>
+        <div class="strategy-layout">
+          <article class="detail-card strategy-live-card">
+            <div class="card-title">即時策略狀態</div>
+            <div class="detail-row"><span>Fair Price</span><b id="fairValue">—</b></div>
+            <div class="detail-row"><span>Microprice</span><b id="microValue">—</b></div>
+            <div class="detail-row"><span>Depth Imbalance</span><b id="imbalanceValue">—</b></div>
+            <div class="detail-row"><span>Inventory</span><b id="inventoryValue">—</b></div>
+            <div class="detail-row"><span>Leverage</span><b id="leverageValue">—</b></div>
+          </article>
+
+          <form id="strategySettingsForm" class="settings-card">
+            <div class="settings-head">
+              <div><span class="label">PARAMETERS</span><h3>策略參數</h3></div>
+              <button id="reloadStrategySettings" class="ghost-button" type="button">重新載入</button>
+            </div>
+
+            <div class="settings-group-title">常用</div>
+            <div class="settings-grid">
+              <label class="field"><span>單邊下單額</span><div class="input-unit"><input id="quoteNotionalInput" type="number" min="1" step="1"><em>U</em></div></label>
+              <label class="field"><span>Base Spread</span><div class="input-unit"><input id="baseSpreadInput" type="number" min="0.1" step="0.1"><em>bps</em></div></label>
+              <label class="field"><span>最小 Net Edge</span><div class="input-unit"><input id="minEdgeInput" type="number" min="0" step="0.1"><em>bps</em></div></label>
+              <label class="field"><span>Inventory Risk</span><div class="input-unit"><input id="inventoryRiskInput" type="number" min="0" max="5" step="0.05"><em>γ</em></div></label>
+              <label class="field"><span>資金利用率</span><div class="input-unit"><input id="capitalUtilInput" type="number" min="50" max="90" step="1"><em>%</em></div></label>
+              <label class="field"><span>要求槓桿</span><div class="input-unit"><input id="leverageInput" type="number" min="1" max="100" step="1"><em>×</em></div></label>
+            </div>
+
+            <details class="advanced-settings">
+              <summary>進階參數</summary>
+              <div class="settings-grid advanced-grid">
+                <label class="field"><span>Requote 門檻</span><div class="input-unit"><input id="requoteInput" type="number" min="0.1" max="50" step="0.1"><em>bps</em></div></label>
+                <label class="field"><span>最短 Quote Life</span><div class="input-unit"><input id="quoteLifeInput" type="number" min="0.25" max="60" step="0.25"><em>sec</em></div></label>
+                <label class="field"><span>最大 Order Age</span><div class="input-unit"><input id="orderAgeInput" type="number" min="1" max="300" step="1"><em>sec</em></div></label>
+                <label class="field"><span>日損硬停</span><div class="input-unit"><input id="dailyLossInput" type="number" min="0.1" step="0.1"><em>U</em></div></label>
+                <label class="field"><span>雙邊最大槓桿</span><div class="input-unit"><input id="dualSideMaxLevInput" type="number" min="1" max="100" step="1"><em>×</em></div></label>
+                <label class="field"><span>月觀察目標</span><div class="input-unit"><input id="monthlyTargetInput" type="number" min="0" step="1000"><em>U</em></div></label>
+              </div>
+              <p class="settings-note">月目標只做統計觀察，不作為強迫下單條件。實際槓桿上限仍由 Toobit risk limits 與 Runtime risk gate 決定。</p>
+            </details>
+
+            <div class="settings-savebar">
+              <div><b id="settingsStatus">尚未載入</b><span>儲存後所有裝置會讀到同一組設定</span></div>
+              <button id="saveStrategySettings" class="save-button" type="submit">儲存策略參數</button>
+            </div>
+          </form>
+        </div>
       </section>
 
       <section class="page" data-page="orders">
