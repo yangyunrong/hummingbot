@@ -1,11 +1,13 @@
 const API='/api';
+const SETTINGS_API='/v49-settings/';
 const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)];
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
 const fmt=(v,d=2)=>num(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
-let token='',adminConfigured=false,tradePermissionStatus='UNKNOWN',lastRuntime={},lastTelemetry={},lastCapability={ok:false,reason:'EXECUTOR_OFFLINE'};
+let token='',adminConfigured=false,tradePermissionStatus='UNKNOWN',lastRuntime={},lastTelemetry={},lastCapability={ok:false,reason:'EXECUTOR_OFFLINE'},strategySettingsLoaded=false;
 
 function toast(message){const e=q('#toast');e.textContent=message;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),2200)}
 async function call(path,options={}){const headers={Accept:'application/json'};if(token)headers.Authorization='Bearer '+token;if(options.body!==undefined)headers['Content-Type']='application/json';const r=await fetch(API+path,{method:options.method||'GET',headers,cache:'no-store',body:options.body!==undefined?JSON.stringify(options.body):undefined});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.message||data.error||`HTTP ${r.status}`);return data}
+async function settingsCall(options={}){const headers={Accept:'application/json'};if(token)headers.Authorization='Bearer '+token;if(options.body!==undefined)headers['Content-Type']='application/json';const r=await fetch(SETTINGS_API,{method:options.method||'GET',headers,cache:'no-store',body:options.body!==undefined?JSON.stringify(options.body):undefined});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.message||data.error||`HTTP ${r.status}`);return data}
 
 function capability(x={}){
   const mode=String(x.executorMode||'').toUpperCase(),trade=String(x.tradePermissionStatus||'').toUpperCase();
@@ -21,6 +23,7 @@ const reasonText={EXECUTOR_OFFLINE:'實盤 Executor 尚未啟用',LIVE_DISABLED:
 
 function setText(id,value){const e=q(id);if(e)e.textContent=value}
 function setStateClass(el,state){if(!el)return;el.classList.remove('up','warn','danger');if(['READY','RUNNING','VERIFIED','ONLINE'].includes(state))el.classList.add('up');else if(['LOCKED','PAUSED','RISK_REDUCE'].includes(state))el.classList.add('warn');else if(['DISARMED','OFFLINE','ERROR'].includes(state))el.classList.add('danger')}
+function setInput(id,value){const e=q(id);if(e)e.value=Number.isFinite(Number(value))?String(value):''}
 
 function renderCapability(){
   const t=lastTelemetry,r=lastRuntime,mode=String(t.strategy_mode||'').toUpperCase();
@@ -43,6 +46,56 @@ function renderTelemetry(data){
   renderCapability();
 }
 
+function renderStrategySettings(s={}){
+  setInput('#quoteNotionalInput',s.baseQuoteNotional);
+  setInput('#baseSpreadInput',s.baseSpreadBps);
+  setInput('#minEdgeInput',s.minNetEdgeBps);
+  setInput('#inventoryRiskInput',s.inventoryRisk);
+  setInput('#capitalUtilInput',num(s.capitalUtilization)*100);
+  setInput('#leverageInput',s.requestedLeverage);
+  setInput('#requoteInput',s.requoteBps);
+  setInput('#quoteLifeInput',num(s.minQuoteLifeMs)/1000);
+  setInput('#orderAgeInput',num(s.maxOrderAgeMs)/1000);
+  setInput('#dailyLossInput',s.dailyLossLimitUsdt);
+  setInput('#dualSideMaxLevInput',s.maxDualSideLeverage);
+  setInput('#monthlyTargetInput',s.monthlyVolumeTarget);
+  strategySettingsLoaded=true;
+  const stamp=s.updatedAt?new Date(s.updatedAt).toLocaleString('zh-TW',{hour12:false}):'預設值';
+  setText('#settingsStatus',`已載入 · ${stamp}`);
+}
+
+function readStrategyForm(){
+  return{
+    baseQuoteNotional:num(q('#quoteNotionalInput')?.value),
+    baseSpreadBps:num(q('#baseSpreadInput')?.value),
+    minNetEdgeBps:num(q('#minEdgeInput')?.value),
+    inventoryRisk:num(q('#inventoryRiskInput')?.value),
+    capitalUtilization:num(q('#capitalUtilInput')?.value)/100,
+    requestedLeverage:num(q('#leverageInput')?.value),
+    requoteBps:num(q('#requoteInput')?.value),
+    minQuoteLifeMs:Math.round(num(q('#quoteLifeInput')?.value)*1000),
+    maxOrderAgeMs:Math.round(num(q('#orderAgeInput')?.value)*1000),
+    dailyLossLimitUsdt:num(q('#dailyLossInput')?.value),
+    maxDualSideLeverage:num(q('#dualSideMaxLevInput')?.value),
+    monthlyVolumeTarget:num(q('#monthlyTargetInput')?.value)
+  };
+}
+
+async function loadStrategySettings(){
+  if(!token)return;
+  setText('#settingsStatus','載入中…');
+  try{const d=await settingsCall();renderStrategySettings(d.settings||{});return d.settings||{}}
+  catch(e){setText('#settingsStatus','載入失敗');toast('策略參數讀取失敗：'+e.message);throw e}
+}
+
+async function saveStrategySettings(event){
+  event?.preventDefault();
+  const btn=q('#saveStrategySettings');if(btn)btn.disabled=true;setText('#settingsStatus','儲存中…');
+  try{const d=await settingsCall({method:'POST',body:readStrategyForm()});renderStrategySettings(d.settings||{});toast('策略參數已儲存');return d.settings||{}}
+  catch(e){setText('#settingsStatus','儲存失敗');toast('策略參數儲存失敗：'+e.message);throw e}
+  finally{if(btn)btn.disabled=false}
+}
+
 async function refreshTelemetry(){try{renderTelemetry(await call('/telemetry'))}catch(e){const cp=q('#connectionPill');cp.textContent='● 資料異常';setStateClass(cp,'ERROR')}}
 async function refreshDiagnostics(){try{const d=await call('/account-diagnostics'),a=d.account||{},b=a.balance||{},p=Array.isArray(a.positions)?a.positions[0]:a.position||{};setText('#equityValue',fmt(b.balance));setText('#availableValue',`${fmt(b.availableBalance)} U`);setText('#leverageValue',p?.leverage?`${fmt(p.leverage,0)}×`:'—')}catch(e){toast('帳戶資料讀取失敗')}}
 async function refreshCredential(){try{const d=await call('/credential-status');tradePermissionStatus=String(d.tradePermissionStatus||'UNKNOWN').toUpperCase();renderCapability()}catch{tradePermissionStatus='UNKNOWN'}}
@@ -52,7 +105,7 @@ async function bootstrap(){
   try{const s=await call('/system-status');adminConfigured=!!s.adminConfigured;q('#loginOverlay').classList.add('on')}catch(e){q('#loginError').textContent='系統狀態讀取失敗'}
 }
 
-q('#loginForm').onsubmit=async e=>{e.preventDefault();q('#loginError').textContent='';try{const password=q('#password').value,d=await call(adminConfigured?'/auth-login':'/setup',{method:'POST',body:adminConfigured?{password}:{password}});token=d.sessionToken||'';q('#loginOverlay').classList.remove('on');await Promise.allSettled([refreshCredential(),refreshTelemetry(),refreshDiagnostics(),refreshOrders()])}catch(err){q('#loginError').textContent='登入失敗：'+err.message}};
+q('#loginForm').onsubmit=async e=>{e.preventDefault();q('#loginError').textContent='';try{const password=q('#password').value,d=await call(adminConfigured?'/auth-login':'/setup',{method:'POST',body:adminConfigured?{password}:{password}});token=d.sessionToken||'';q('#loginOverlay').classList.remove('on');await Promise.allSettled([refreshCredential(),refreshTelemetry(),refreshDiagnostics(),refreshOrders(),loadStrategySettings()])}catch(err){q('#loginError').textContent='登入失敗：'+err.message}};
 
 q('#primaryAction').onclick=async()=>{
   const running=String(lastRuntime.state||'').toUpperCase()==='RUNNING';
@@ -61,7 +114,10 @@ q('#primaryAction').onclick=async()=>{
   try{await call('/strategy-command',{method:'POST',body:{action:'START'}});toast('啟動指令已送出');setTimeout(refreshTelemetry,800)}catch(e){toast('啟動失敗：'+e.message)}
 };
 
-qa('.tab-btn').forEach(button=>button.onclick=()=>{qa('.tab-btn').forEach(x=>x.classList.toggle('active',x===button));qa('.page').forEach(page=>page.classList.toggle('active',page.dataset.page===button.dataset.tab));if(button.dataset.tab==='orders')refreshOrders()});
+q('#strategySettingsForm').onsubmit=saveStrategySettings;
+q('#reloadStrategySettings').onclick=()=>loadStrategySettings().catch(()=>{});
+
+qa('.tab-btn').forEach(button=>button.onclick=()=>{qa('.tab-btn').forEach(x=>x.classList.toggle('active',x===button));qa('.page').forEach(page=>page.classList.toggle('active',page.dataset.page===button.dataset.tab));if(button.dataset.tab==='orders')refreshOrders();if(button.dataset.tab==='strategy'&&!strategySettingsLoaded)loadStrategySettings().catch(()=>{})});
 qa('[data-more]').forEach(button=>button.onclick=()=>toast(`${button.textContent.trim()} 將在下一批接回完整頁面`));
 setInterval(()=>token&&refreshTelemetry(),2000);setInterval(()=>token&&refreshDiagnostics(),10000);
 bootstrap();
