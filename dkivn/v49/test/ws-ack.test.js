@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {MarketDataEngine} from '../src/maker-core.js';
+test('empty subscription ack is ignored without throwing or making market fresh',()=>{const m=new MarketDataEngine('BTC-SWAP-USDT');assert.doesNotThrow(()=>m.onBookTicker({topic:'bookTicker',event:'sub',data:[]}));assert.equal(m.onBookTicker({topic:'bookTicker',event:'sub',data:[]}),false);assert.equal(m.onDiffDepth({topic:'diffDepth',event:'sub',data:[]}),false);assert.equal(m.snapshot().marketDataAgeMs,Infinity);});
