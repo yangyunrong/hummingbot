@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090b">
+  <title>DKIVN V4.9</title>
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <span class="eyebrow">TOOBIT · BTCUSDT</span>
+        <h1>DKIVN</h1>
+      </div>
+      <div id="connectionPill" class="connection-pill">連線中</div>
+    </header>
+
+    <main class="content">
+      <section class="page active" data-page="overview">
+        <article class="hero-card">
+          <span class="label">總資產</span>
+          <div class="equity-line"><strong id="equityValue">—</strong><span>USDT</span></div>
+          <div class="hero-grid">
+            <div><span>可用</span><b id="availableValue">—</b></div>
+            <div><span>今日 PnL</span><b id="todayPnlValue">—</b></div>
+            <div><span>BTC 倉位</span><b id="positionValue">—</b></div>
+          </div>
+        </article>
+
+        <article class="strategy-card">
+          <div class="strategy-head">
+            <div><span class="label">策略</span><h2>Adaptive Maker</h2></div>
+            <span id="strategyState" class="state-pill">檢查中</span>
+          </div>
+          <p id="strategyReason">正在確認 Executor、Trade 權限與 WebSocket。</p>
+          <button id="primaryAction" class="primary-action" disabled>檢查中</button>
+        </article>
+
+        <article class="mini-card">
+          <div><span>Public WS</span><b id="publicWsValue">—</b></div>
+          <div><span>Private WS</span><b id="privateWsValue">—</b></div>
+          <div><span>風險</span><b id="riskValue">—</b></div>
+        </article>
+      </section>
+
+      <section class="page" data-page="strategy">
+        <div class="section-head"><span class="eyebrow">EXECUTION</span><h2>策略</h2></div>
+        <article class="detail-card">
+          <div class="detail-row"><span>Fair Price</span><b id="fairValue">—</b></div>
+          <div class="detail-row"><span>Microprice</span><b id="microValue">—</b></div>
+          <div class="detail-row"><span>Depth Imbalance</span><b id="imbalanceValue">—</b></div>
+          <div class="detail-row"><span>Inventory</span><b id="inventoryValue">—</b></div>
+          <div class="detail-row"><span>Leverage</span><b id="leverageValue">—</b></div>
+        </article>
+      </section>
+
+      <section class="page" data-page="orders">
+        <div class="section-head"><span class="eyebrow">TOOBIT</span><h2>訂單</h2></div>
+        <article id="ordersCard" class="detail-card empty-state">目前沒有 Bot Orders</article>
+      </section>
+
+      <section class="page" data-page="risk">
+        <div class="section-head"><span class="eyebrow">SAFETY</span><h2>風險</h2></div>
+        <article class="detail-card">
+          <div class="detail-row"><span>Runtime</span><b id="runtimeValue">—</b></div>
+          <div class="detail-row"><span>Liquidation</span><b id="liquidationValue">—</b></div>
+          <div class="detail-row"><span>uPnL</span><b id="upnlValue">—</b></div>
+          <div class="detail-row"><span>API Error Streak</span><b id="apiErrorValue">—</b></div>
+        </article>
+      </section>
+
+      <section class="page" data-page="more">
+        <div class="section-head"><span class="eyebrow">SYSTEM</span><h2>更多</h2></div>
+        <article class="menu-card">
+          <button data-more="api">API 連線 <span>›</span></button>
+          <button data-more="funding">套利 / Funding <span>›</span></button>
+          <button data-more="exchange">交易所管理 <span>›</span></button>
+          <button data-more="diagnostics">API Diagnostics <span>›</span></button>
+          <button data-more="settings">系統設定 <span>›</span></button>
+        </article>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="主要導覽">
+      <button class="tab-btn active" data-tab="overview"><span>總覽</span></button>
+      <button class="tab-btn" data-tab="strategy"><span>策略</span></button>
+      <button class="tab-btn" data-tab="orders"><span>訂單</span></button>
+      <button class="tab-btn" data-tab="risk"><span>風險</span></button>
+      <button class="tab-btn" data-tab="more"><span>更多</span></button>
+    </nav>
+  </div>
+
+  <div id="loginOverlay" class="login-overlay on">
+    <form id="loginForm" class="login-card">
+      <span class="eyebrow">DKIVN V4.9</span>
+      <h2>管理員登入</h2>
+      <input id="password" type="password" autocomplete="current-password" placeholder="密碼" required>
+      <button>登入</button>
+      <p id="loginError"></p>
+    </form>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
