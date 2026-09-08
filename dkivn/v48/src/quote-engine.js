@@ -15,23 +15,33 @@ export function buildDesiredQuotes({market, fair, inventory = {}, config = {}, t
   const minEdgeBps = Math.max(0, 2 * finite(feeBps) + finite(adverseSelectionBps));
   const halfEdgeBps = minEdgeBps / 2;
   const quoteNotional = Math.max(0, finite(config.quoteNotional, 10));
+  const minQuoteNotional = Math.max(0, finite(config.minQuoteNotional, 5));
+  const notionalFor = (side) => {
+    let value = quoteNotional;
+    if (inventory.reduceOnly === true && String(inventory.reduceSide || '').toUpperCase() === side) {
+      value = Math.min(value, Math.max(0, finite(inventory.reduceNotionalCap)));
+    }
+    return value >= minQuoteNotional ? value : 0;
+  };
   let bid = null;
   let ask = null;
 
-  if (inventory.allowBid !== false) {
+  const bidNotional = notionalFor('BID');
+  if (inventory.allowBid !== false && bidNotional > 0) {
     const bidDistance = Math.max(0, halfEdgeBps + finite(inventory.bidSkewBps));
     const raw = fairValue * (1 - bidDistance / 10000);
     const passiveCap = bestAsk - tick;
     const price = clean(roundDown(Math.min(raw, passiveCap), tick), tick);
-    if (price > 0 && price < bestAsk) bid = { side: 'BUY', price, notional: quoteNotional, timeInForce: 'POST_ONLY', type: 'LIMIT' };
+    if (price > 0 && price < bestAsk) bid = { side: 'BUY', price, notional: bidNotional, timeInForce: 'POST_ONLY', type: 'LIMIT' };
   }
 
-  if (inventory.allowAsk !== false) {
+  const askNotional = notionalFor('ASK');
+  if (inventory.allowAsk !== false && askNotional > 0) {
     const askDistance = Math.max(0, halfEdgeBps + finite(inventory.askSkewBps));
     const raw = fairValue * (1 + askDistance / 10000);
     const passiveFloor = bestBid + tick;
     const price = clean(roundUp(Math.max(raw, passiveFloor), tick), tick);
-    if (price > bestBid) ask = { side: 'SELL', price, notional: quoteNotional, timeInForce: 'POST_ONLY', type: 'LIMIT' };
+    if (price > bestBid) ask = { side: 'SELL', price, notional: askNotional, timeInForce: 'POST_ONLY', type: 'LIMIT' };
   }
 
   if (bid && ask) {
