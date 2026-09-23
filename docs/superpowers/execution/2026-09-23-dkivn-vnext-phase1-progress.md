@@ -25,3 +25,5 @@ Task 2: Ruling: AlertEvent.firstSeenMonoNs crosses JSON/process boundaries, so t
 Task 2: complete (RED run 35823315202: shared contract tests failure; GREEN run 35823421545: all contracts tests + TypeScript build success; commits b8d176a..a1284c6)
 
 Task 3: complete (RED run 35823537719: engine test failure; GREEN run 35823625260: control tests + TypeScript build success; commits 1d85f4b..8be82a6)
+
+Task 4: complete (RED run 35823710017: immutable config tests failure; GREEN run 35823796233: engine tests + TypeScript build success; commits bae1386..3068923)
