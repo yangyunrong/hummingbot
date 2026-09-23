@@ -1,0 +1,22 @@
+[Unit]
+Description=DKIVN VNext Operator Console
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=dkivn
+Group=dkivn
+WorkingDirectory=/opt/dkivn-vnext/console/apps/web
+EnvironmentFile=-/etc/dkivn-vnext/console.env
+ExecStart=/usr/bin/node /opt/dkivn-vnext/console/apps/web/node_modules/next/dist/bin/next start -p 3100
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
