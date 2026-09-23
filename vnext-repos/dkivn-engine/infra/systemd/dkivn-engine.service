@@ -1,0 +1,28 @@
+[Unit]
+Description=DKIVN VNext Live Trading Engine
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=dkivn
+Group=dkivn
+WorkingDirectory=/opt/dkivn-vnext/engine
+EnvironmentFile=-/etc/dkivn-vnext/engine.env
+ExecStart=/usr/bin/node /opt/dkivn-vnext/engine/dist/engine.js
+Restart=always
+RestartSec=2
+TimeoutStopSec=30
+KillSignal=SIGTERM
+RuntimeDirectory=dkivn
+RuntimeDirectoryMode=0750
+StateDirectory=dkivn-engine
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/dkivn /var/lib/dkivn-engine
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
