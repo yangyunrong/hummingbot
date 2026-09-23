@@ -1,0 +1,23 @@
+name: vnext-boundaries-ci
+on:
+  push:
+    branches: [dkivn-hybrid-mm-vnext]
+    paths:
+      - "vnext-repos/dkivn-engine/**"
+      - "vnext-repos/dkivn-console/**"
+      - ".github/workflows/vnext-boundaries-ci.yml"
+  pull_request:
+    paths:
+      - "vnext-repos/dkivn-engine/**"
+      - "vnext-repos/dkivn-console/**"
+
+jobs:
+  exact-contract-pins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node vnext-repos/dkivn-engine/scripts/check-contracts-pin.cjs
+      - run: node vnext-repos/dkivn-console/scripts/check-contracts-pin.cjs
