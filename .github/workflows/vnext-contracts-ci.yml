@@ -22,5 +22,5 @@ jobs:
         with:
           node-version: 22
       - run: npm install --ignore-scripts
-      - run: npm test -- --run test/enums.test.ts
+      - run: npm test
       - run: npm run build
