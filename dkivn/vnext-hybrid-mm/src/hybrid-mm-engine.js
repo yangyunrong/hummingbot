@@ -13,17 +13,21 @@ export function computeDynamicGamma(baseGamma, toxicity, inventoryAbsNorm, gamma
   return baseGamma * (1 + gammaToxicityMult * t + gammaInventoryMult * q);
 }
 
-export function computeReservationPrice(mid, inventoryQNorm, gamma, sigma2) {
-  return mid - inventoryQNorm * gamma * sigma2 * mid;
+// sigma2Fraction is variance in fractional-return space.
+export function computeReservationPrice(mid, inventoryQNorm, gamma, sigma2Fraction) {
+  return mid - inventoryQNorm * gamma * sigma2Fraction * mid;
 }
 
-export function computeASOptimalHalfSpreadBps(gamma, sigma2, kappa, horizon = 1) {
-  const safeKappa = Math.max(kappa, 1e-9);
+// Explicit unit contract:
+// - sigma2Bps2: variance expressed in bps^2 over the selected horizon
+// - kappaPerBps: liquidity-decay coefficient in inverse-bps units
+// Result is half-spread in bps.
+export function computeASOptimalHalfSpreadBps(gamma, sigma2Bps2, kappaPerBps, horizon = 1) {
+  const safeKappa = Math.max(kappaPerBps, 1e-9);
   const g = Math.max(gamma, 1e-9);
-  const riskTerm = g * sigma2 * Math.max(horizon, 0);
-  const liquidityTerm = (2 / g) * Math.log1p(g / safeKappa);
-  // Model output is normalized; convert to bps for DKIVN quoting.
-  return Math.max(0, (riskTerm + liquidityTerm) * 5000);
+  const riskTermBps = g * Math.max(sigma2Bps2, 0) * Math.max(horizon, 0);
+  const liquidityTermBps = (2 / g) * Math.log1p(g / safeKappa);
+  return Math.max(0, 0.5 * (riskTermBps + liquidityTermBps));
 }
 
 export function inventoryPolicy(netInventoryNotional, softLimit, hardLimit, out) {
@@ -41,14 +45,12 @@ export function inventoryPolicy(netInventoryNotional, softLimit, hardLimit, out)
   out.inventoryAbsNorm = norm;
 
   if (netInventoryNotional > 0) {
-    // Long inventory: discourage more buys, encourage sells.
     out.bidWidenMult = 1 + norm;
     out.askWidenMult = Math.max(0, 1 - norm);
     out.bidSizeMult = Math.max(0, 1 - norm);
     out.askSizeMult = 1 + norm;
     if (abs >= hard) out.allowBid = false;
   } else if (netInventoryNotional < 0) {
-    // Short inventory: discourage more sells, encourage buys.
     out.askWidenMult = 1 + norm;
     out.bidWidenMult = Math.max(0, 1 - norm);
     out.askSizeMult = Math.max(0, 1 - norm);
@@ -56,7 +58,6 @@ export function inventoryPolicy(netInventoryNotional, softLimit, hardLimit, out)
     if (abs >= hard) out.allowAsk = false;
   }
 
-  // Soft-limit acceleration without discontinuity.
   if (abs > soft && hard > soft) {
     const z = clamp((abs - soft) / (hard - soft), 0, 1);
     if (netInventoryNotional > 0) {
@@ -98,7 +99,6 @@ export function createHybridMMState() {
   };
 }
 
-// reason codes
 export const REASON = Object.freeze({
   OK: 0,
   TRUTH_UNHEALTHY: 1,
@@ -149,13 +149,13 @@ export function evaluateHybridMM(input, out) {
     input.referencePrice,
     input.inventoryQNorm,
     out.dynamicGamma,
-    input.sigma2
+    input.sigma2Fraction
   );
 
   out.optimalHalfSpreadBps = computeASOptimalHalfSpreadBps(
     out.dynamicGamma,
-    input.sigma2,
-    input.kappa,
+    input.sigma2Bps2,
+    input.kappaPerBps,
     input.horizon
   );
 
@@ -168,7 +168,6 @@ export function evaluateHybridMM(input, out) {
   let desiredBid = out.reservationPrice * (1 - bidHalfBps / 10000);
   let desiredAsk = out.reservationPrice * (1 + askHalfBps / 10000);
 
-  // post-only / no-cross clamps
   desiredBid = Math.min(desiredBid, input.bestAsk - input.tickSize);
   desiredAsk = Math.max(desiredAsk, input.bestBid + input.tickSize);
 
