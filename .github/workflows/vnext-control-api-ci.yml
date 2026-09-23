@@ -50,7 +50,7 @@ jobs:
         run: npm run db:migrate
       - name: Test control-api
         working-directory: vnext-repos/dkivn-console/apps/control-api
-        run: npm run test:integration
+        run: npm test
       - name: Build control-api
         working-directory: vnext-repos/dkivn-console/apps/control-api
         run: npm run build
