@@ -44,7 +44,7 @@ jobs:
           npm pack --pack-destination /tmp
       - name: Install control-api dependencies
         working-directory: vnext-repos/dkivn-console/apps/control-api
-        run: npm install --ignore-scripts --no-package-lock --no-save /tmp/dkivn-contracts-0.1.0.tgz drizzle-orm@^0.44.0 pg@^8.16.0 vitest@^3.2.0 typescript@^5.9.0 @types/node@^22.0.0 @types/pg@^8.15.0
+        run: npm install --ignore-scripts --no-package-lock --no-save /tmp/dkivn-contracts-0.1.0.tgz drizzle-orm@^0.44.0 pg@^8.16.0 fastify@^5.6.0 vitest@^3.2.0 typescript@^5.9.0 @types/node@^22.0.0 @types/pg@^8.15.0
       - name: Apply migrations
         working-directory: vnext-repos/dkivn-console/apps/control-api
         run: npm run db:migrate
