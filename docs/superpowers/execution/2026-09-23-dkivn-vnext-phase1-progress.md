@@ -27,3 +27,5 @@ Task 2: complete (RED run 35823315202: shared contract tests failure; GREEN run 
 Task 3: complete (RED run 35823537719: engine test failure; GREEN run 35823625260: control tests + TypeScript build success; commits 1d85f4b..8be82a6)
 
 Task 4: complete (RED run 35823710017: immutable config tests failure; GREEN run 35823796233: engine tests + TypeScript build success; commits bae1386..3068923)
+
+Task 5: complete (RED run 35823883629: telemetry tests failure; first GREEN attempt run 35823951213: tests passed but TypeScript build failed TS2412; root cause exactOptionalPropertyTypes on optional class callback; fix commit 3fd55fa; final GREEN run 35824037611: engine tests + TypeScript build success)
