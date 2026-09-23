@@ -13,7 +13,7 @@ export class TelemetryWorker<T> {
   private readonly sender: (batch: T[]) => Promise<void>;
   private readonly maxBatchSize: number;
   private readonly flushIntervalMs: number;
-  private readonly onDegraded?: (error: unknown) => void;
+  private readonly onDegraded: ((error: unknown) => void) | undefined;
   private timer: NodeJS.Timeout | null = null;
   private flushing = false;
 
