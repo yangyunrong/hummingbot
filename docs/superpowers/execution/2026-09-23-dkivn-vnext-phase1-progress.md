@@ -18,3 +18,6 @@ Pre-flight shared interfaces:
 - Task 10 -> Task 11/12: console behavior is acceptance-tested for isolation. Clean.
 
 Task 0: complete (staged export-ready repo boundaries; vnext-boundaries-ci run 35823062897 -> success; actual private repo creation deferred by connector limitation)
+
+Task 1: complete (RED run 35823184821: enum test failure; GREEN run 35823226175: enum tests success + TypeScript build success; commits 73cc524..5edf4b4)
+Task 2: Ruling: AlertEvent.firstSeenMonoNs crosses JSON/process boundaries, so the contract represents it as a non-negative decimal string and engines may parse it to BigInt internally. Native bigint is not JSON serializable. Cost if wrong: adapter conversion at service boundary.
