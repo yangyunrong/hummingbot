@@ -82,3 +82,16 @@ A later VNext canary repeats the same test against VNext venue processes before 
 ## Current Tokyo host baseline (2026-09-23)
 
 At design/implementation time, the Tokyo host still runs the existing V4.9/V14 production topology under `/opt/dkivn-v49`. VNext service definitions are staged separately and must not overwrite those units before the Phase 1 cutover gate.
+
+
+## Executed acceptance evidence — 2026-09-23
+
+Tokyo host `tokyo-gateway` read-only shadow isolation was exercised before any VNext cutover:
+
+- Toobit V14 shadow PID before restart: `1047485`
+- Toobit V14 shadow PID after restart: `1351412`
+- Bitget V14 shadow PID before restart: `1047462`
+- Bitget V14 shadow PID after Toobit restart: `1047462`
+- Result: **PASS — Bitget shadow process was not restarted or coupled to the Toobit shadow lifecycle.**
+
+This evidence covers the venue-isolation acceptance concept using existing read-only shadow processes. It does not substitute for the later VNext engine/console PID-isolation and PostgreSQL-outage tests, which require the VNext services to be installed in the canary environment.
