@@ -1,0 +1,37 @@
+name: vnext-engine-ci
+on:
+  push:
+    branches: [dkivn-hybrid-mm-vnext]
+    paths:
+      - "vnext-repos/dkivn-engine/**"
+      - "vnext-repos/dkivn-contracts/**"
+      - ".github/workflows/vnext-engine-ci.yml"
+  pull_request:
+    paths:
+      - "vnext-repos/dkivn-engine/**"
+      - "vnext-repos/dkivn-contracts/**"
+      - ".github/workflows/vnext-engine-ci.yml"
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build local contracts package
+        working-directory: vnext-repos/dkivn-contracts
+        run: |
+          npm install --ignore-scripts
+          npm run build
+          npm pack --pack-destination /tmp
+      - name: Install engine test dependencies
+        working-directory: vnext-repos/dkivn-engine
+        run: npm install --ignore-scripts --no-package-lock --no-save /tmp/dkivn-contracts-0.1.0.tgz vitest@^3.2.0 typescript@^5.9.0 @types/node@^22.0.0
+      - name: Test engine
+        working-directory: vnext-repos/dkivn-engine
+        run: npm test
+      - name: Build engine
+        working-directory: vnext-repos/dkivn-engine
+        run: npm run build
