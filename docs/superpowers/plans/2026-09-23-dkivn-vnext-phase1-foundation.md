@@ -91,6 +91,112 @@
 
 ---
 
+### Task 0: Create the Three Repository Boundaries and Pin Contract Distribution
+
+**Repositories:**
+- Create: `dkivn-contracts`
+- Create: `dkivn-engine`
+- Create: `dkivn-console`
+
+**Files:**
+- Create: `dkivn-contracts/.github/workflows/publish.yml`
+- Create: `dkivn-contracts/.npmrc`
+- Create: `dkivn-engine/.npmrc`
+- Create: `dkivn-console/.npmrc`
+- Create: `dkivn-engine/package.json`
+- Create: `dkivn-console/package.json`
+- Create: `dkivn-console/package-lock.json` through `npm install`
+- Create: `dkivn-engine/package-lock.json` through `npm install`
+
+**Interfaces:**
+- Consumes: approved VNext System Design Spec.
+- Produces: independent Git repositories and an immutable package-distribution path for `@dkivn/contracts`.
+
+- [ ] **Step 1: Create repositories without moving production runtime yet**
+
+Create three private repositories and initialize `main` with README files stating their single responsibility. Do not delete, rename, or relocate the existing live DKIVN runtime during this step.
+
+- [ ] **Step 2: Configure private package registry for contracts**
+
+Use GitHub Packages for `@dkivn/contracts`:
+
+```ini
+@dkivn:registry=https://npm.pkg.github.com
+always-auth=true
+```
+
+CI obtains `NODE_AUTH_TOKEN` from repository-scoped secrets/permissions. Tokens MUST NOT be committed.
+
+- [ ] **Step 3: Add contracts publish workflow**
+
+```yaml
+name: publish-contracts
+on:
+  push:
+    tags:
+      - "contracts-v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+- [ ] **Step 4: Pin consumers to exact contract versions**
+
+Engine and Console must use an exact version, never `latest`, `*`, or caret ranges:
+
+```json
+{
+  "dependencies": {
+    "@dkivn/contracts": "0.1.0"
+  }
+}
+```
+
+A contract upgrade is an explicit PR in each consumer repo and is test-gated independently.
+
+- [ ] **Step 5: Add lockfile policy test to CI**
+
+CI fails if `package.json` uses a non-exact `@dkivn/contracts` version:
+
+```js
+const pkg = require("./package.json");
+const v = pkg.dependencies?.["@dkivn/contracts"];
+if (!/^\d+\.\d+\.\d+$/.test(v || "")) {
+  throw new Error("@dkivn/contracts must be pinned to an exact semver");
+}
+```
+
+Run this check in both `dkivn-engine` and `dkivn-console`.
+
+- [ ] **Step 6: Prove repository deployment independence**
+
+Create separate CI workflows with no cross-repository deployment trigger. Publishing a contracts package may open/enable dependency-update PRs, but MUST NOT automatically deploy Engine or Console.
+
+- [ ] **Step 7: Commit each repository bootstrap**
+
+```bash
+git add .
+git commit -m "chore: bootstrap DKIVN VNext repository boundary"
+```
+
+---
+
 ### Task 1: Bootstrap and Publish `dkivn-contracts`
 
 **Files:**
