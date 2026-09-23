@@ -16,3 +16,5 @@ Pre-flight shared interfaces:
 - Task 6 -> Task 7/8/9/10: PostgreSQL read models and durable state. Clean.
 - Task 7/8/9 -> Task 10: read/control APIs feed console. Clean.
 - Task 10 -> Task 11/12: console behavior is acceptance-tested for isolation. Clean.
+
+Task 0: complete (staged export-ready repo boundaries; vnext-boundaries-ci run 35823062897 -> success; actual private repo creation deferred by connector limitation)
