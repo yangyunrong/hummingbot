@@ -1,0 +1,25 @@
+[Unit]
+Description=DKIVN VNext Control and Data API
+Wants=network-online.target
+After=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=dkivn
+Group=dkivn
+WorkingDirectory=/opt/dkivn-vnext/console/apps/control-api
+EnvironmentFile=-/etc/dkivn-vnext/control-api.env
+ExecStart=/usr/bin/node /opt/dkivn-vnext/console/apps/control-api/dist/src/server.js
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/dkivn
+RuntimeDirectory=dkivn
+RuntimeDirectoryMode=0750
+
+[Install]
+WantedBy=multi-user.target
