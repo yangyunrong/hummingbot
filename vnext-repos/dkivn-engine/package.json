@@ -1,0 +1,12 @@
+{
+  "name": "@dkivn/engine-staging",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:contracts-pin": "node scripts/check-contracts-pin.cjs"
+  },
+  "dependencies": {
+    "@dkivn/contracts": "0.1.0"
+  }
+}
