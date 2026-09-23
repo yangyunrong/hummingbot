@@ -12,7 +12,8 @@
   "dependencies": {
     "@dkivn/contracts": "0.1.0",
     "drizzle-orm": "^0.44.0",
-    "pg": "^8.16.0"
+    "pg": "^8.16.0",
+    "fastify": "^5.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
