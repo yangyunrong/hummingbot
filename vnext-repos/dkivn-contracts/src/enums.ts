@@ -36,3 +36,13 @@ export const OrderLifecycleStateSchema = z.enum([
   "FAILED",
 ]);
 export type OrderLifecycleState = z.infer<typeof OrderLifecycleStateSchema>;
+
+export const MarketRegimeSchema = z.enum([
+  "RANGE",
+  "TREND_UP",
+  "TREND_DOWN",
+  "VOLATILE",
+  "TOXIC",
+  "UNKNOWN",
+]);
+export type MarketRegime = z.infer<typeof MarketRegimeSchema>;
