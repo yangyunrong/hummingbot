@@ -1,0 +1,26 @@
+name: vnext-contracts-ci
+on:
+  push:
+    branches: [dkivn-hybrid-mm-vnext]
+    paths:
+      - "vnext-repos/dkivn-contracts/**"
+      - ".github/workflows/vnext-contracts-ci.yml"
+  pull_request:
+    paths:
+      - "vnext-repos/dkivn-contracts/**"
+      - ".github/workflows/vnext-contracts-ci.yml"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vnext-repos/dkivn-contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts
+      - run: npm test -- --run test/enums.test.ts
+      - run: npm run build
