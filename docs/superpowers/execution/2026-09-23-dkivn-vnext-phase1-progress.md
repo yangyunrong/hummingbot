@@ -29,3 +29,5 @@ Task 3: complete (RED run 35823537719: engine test failure; GREEN run 3582362526
 Task 4: complete (RED run 35823710017: immutable config tests failure; GREEN run 35823796233: engine tests + TypeScript build success; commits bae1386..3068923)
 
 Task 5: complete (RED run 35823883629: telemetry tests failure; first GREEN attempt run 35823951213: tests passed but TypeScript build failed TS2412; root cause exactOptionalPropertyTypes on optional class callback; fix commit 3fd55fa; final GREEN run 35824037611: engine tests + TypeScript build success)
+
+Task 6: complete (RED run 35824194826: migration step failed before runner/schema existed; run 35824341855: migration + PostgreSQL integration tests passed but TypeScript build failed on unused drizzle optional-driver declarations; root cause verified from job 107062701424; fix skipLibCheck for node_modules only; final GREEN run 35824442020: migration + integration tests + build all success)
