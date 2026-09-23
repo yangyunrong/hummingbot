@@ -1,5 +1,5 @@
 import type { Pool } from "pg";
-import { AlertEventSchema, type AlertEvent } from "@dkivn/contracts";
+import { AlertEventSchema } from "@dkivn/contracts";
 
 interface ActiveAlertRow {
   id: string;
@@ -8,7 +8,7 @@ interface ActiveAlertRow {
 export class AlertStore {
   constructor(private readonly pool: Pool) {}
 
-  async upsert(input: AlertEvent): Promise<void> {
+  async upsert(input: unknown): Promise<void> {
     const alert = AlertEventSchema.parse(input);
     const active = await this.pool.query<ActiveAlertRow>(
       `SELECT id
