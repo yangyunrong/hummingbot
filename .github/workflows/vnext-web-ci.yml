@@ -1,0 +1,32 @@
+name: vnext-web-ci
+on:
+  push:
+    branches: [dkivn-hybrid-mm-vnext]
+    paths:
+      - "vnext-repos/dkivn-console/apps/web/**"
+      - ".github/workflows/vnext-web-ci.yml"
+  pull_request:
+    paths:
+      - "vnext-repos/dkivn-console/apps/web/**"
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vnext-repos/dkivn-console/apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Start web
+        run: |
+          npm run start -- -p 3100 > /tmp/dkivn-web.log 2>&1 &
+          npx wait-on http://127.0.0.1:3100
+      - run: npm run e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3100
