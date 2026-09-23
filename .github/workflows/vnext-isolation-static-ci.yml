@@ -1,0 +1,26 @@
+name: vnext-isolation-static-ci
+on:
+  push:
+    branches: [dkivn-hybrid-mm-vnext]
+    paths:
+      - "vnext-repos/dkivn-engine/infra/**"
+      - "vnext-repos/dkivn-console/infra/**"
+      - "vnext-repos/dkivn-console/scripts/**"
+      - ".github/workflows/vnext-isolation-static-ci.yml"
+  pull_request:
+    paths:
+      - "vnext-repos/dkivn-engine/infra/**"
+      - "vnext-repos/dkivn-console/infra/**"
+      - "vnext-repos/dkivn-console/scripts/**"
+jobs:
+  isolation-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node vnext-repos/dkivn-console/scripts/check-isolation-static.mjs
+      - run: bash -n vnext-repos/dkivn-console/scripts/verify-isolation.sh
+      - run: bash -n vnext-repos/dkivn-console/scripts/verify-postgres-outage.sh
+      - run: bash -n vnext-repos/dkivn-console/scripts/verify-venue-isolation.sh
