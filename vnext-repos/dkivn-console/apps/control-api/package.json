@@ -1,0 +1,23 @@
+{
+  "name": "@dkivn/control-api-staging",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:integration": "vitest run test/**/*.integration.test.ts",
+    "db:migrate": "node scripts/apply-migrations.mjs"
+  },
+  "dependencies": {
+    "@dkivn/contracts": "0.1.0",
+    "drizzle-orm": "^0.44.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
