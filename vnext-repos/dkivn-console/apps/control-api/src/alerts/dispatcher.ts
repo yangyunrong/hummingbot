@@ -1,4 +1,4 @@
-import type { AlertEvent, RuntimeState } from "@dkivn/contracts";
+import { AlertEventSchema, type AlertEvent, type RuntimeState } from "@dkivn/contracts";
 
 export type TelegramSend = (message: string) => Promise<void>;
 
@@ -43,7 +43,7 @@ function stoppedAlertIsActionable(alert: AlertEvent): boolean {
   return hasOpenRisk(alert.truthSnapshot);
 }
 
-export function formatTelegramAlert(alert: AlertEvent): string {
+function formatValidatedTelegramAlert(alert: AlertEvent): string {
   const venue = escapeMarkdownV2(alert.venue ?? "SYSTEM");
   const symbol = escapeMarkdownV2(alert.symbol ?? "GLOBAL");
   const summary = escapeMarkdownV2(alert.summary);
@@ -60,17 +60,22 @@ export function formatTelegramAlert(alert: AlertEvent): string {
   ].join("\n");
 }
 
+export function formatTelegramAlert(input: unknown): string {
+  return formatValidatedTelegramAlert(AlertEventSchema.parse(input));
+}
+
 export async function dispatchAlert(options: {
-  alert: AlertEvent;
+  alert: unknown;
   runtimeState: RuntimeState;
   send: TelegramSend;
 }): Promise<boolean> {
-  const { alert, runtimeState, send } = options;
+  const { runtimeState, send } = options;
+  const alert = AlertEventSchema.parse(options.alert);
 
   if (runtimeState === "STOPPED" && !stoppedAlertIsActionable(alert)) {
     return false;
   }
 
-  await send(formatTelegramAlert(alert));
+  await send(formatValidatedTelegramAlert(alert));
   return true;
 }
