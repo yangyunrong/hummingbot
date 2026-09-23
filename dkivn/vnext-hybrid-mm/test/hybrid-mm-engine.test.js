@@ -26,8 +26,9 @@ function baseInput() {
     baseGamma: 0.05,
     gammaToxicityMult: 2,
     gammaInventoryMult: 2,
-    sigma2: 0.000001,
-    kappa: 100,
+    sigma2Fraction: 0.000001,
+    sigma2Bps2: 1,
+    kappaPerBps: 100,
     horizon: 1,
 
     toxicity: 0.1,
