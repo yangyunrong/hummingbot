@@ -1,0 +1,56 @@
+name: vnext-control-api-ci
+on:
+  push:
+    branches: [dkivn-hybrid-mm-vnext]
+    paths:
+      - "vnext-repos/dkivn-console/apps/control-api/**"
+      - "vnext-repos/dkivn-contracts/**"
+      - ".github/workflows/vnext-control-api-ci.yml"
+  pull_request:
+    paths:
+      - "vnext-repos/dkivn-console/apps/control-api/**"
+      - "vnext-repos/dkivn-contracts/**"
+      - ".github/workflows/vnext-control-api-ci.yml"
+
+jobs:
+  control-api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dkivn
+          POSTGRES_PASSWORD: dkivn
+          POSTGRES_DB: dkivn
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dkivn -d dkivn"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://dkivn:dkivn@127.0.0.1:5432/dkivn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build local contracts package
+        working-directory: vnext-repos/dkivn-contracts
+        run: |
+          npm install --ignore-scripts
+          npm run build
+          npm pack --pack-destination /tmp
+      - name: Install control-api dependencies
+        working-directory: vnext-repos/dkivn-console/apps/control-api
+        run: npm install --ignore-scripts --no-package-lock --no-save /tmp/dkivn-contracts-0.1.0.tgz drizzle-orm@^0.44.0 pg@^8.16.0 vitest@^3.2.0 typescript@^5.9.0 @types/node@^22.0.0 @types/pg@^8.15.0
+      - name: Apply migrations
+        working-directory: vnext-repos/dkivn-console/apps/control-api
+        run: npm run db:migrate
+      - name: Test control-api
+        working-directory: vnext-repos/dkivn-console/apps/control-api
+        run: npm run test:integration
+      - name: Build control-api
+        working-directory: vnext-repos/dkivn-console/apps/control-api
+        run: npm run build
